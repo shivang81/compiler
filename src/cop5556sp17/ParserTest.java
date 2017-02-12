@@ -51,4 +51,26 @@ public class ParserTest {
 		parser.parse();
 	}
 
+	@Test
+	public void testProgram1() throws IllegalCharException, IllegalNumberException, SyntaxException{
+		String input = "prog1 { while(i < 10) { a <- 10; } }";
+		Parser parser = new Parser(new Scanner(input).scan());
+		parser.parse();
+	}
+
+    @Test
+    public void testProgram2() throws IllegalCharException, IllegalNumberException, SyntaxException{
+        String input = "prog1 { while(i < 10) { a <- 10 } }";
+        Parser parser = new Parser(new Scanner(input).scan());
+        thrown.expect(Parser.SyntaxException.class);
+        parser.parse();
+    }
+
+	@Test
+	public void testProgram3() throws IllegalCharException, IllegalNumberException, SyntaxException{
+		String input = "prog2 cd;";
+		Parser parser = new Parser(new Scanner(input).scan());
+        thrown.expect(Parser.SyntaxException.class);
+        parser.parse();
+    }
 }
