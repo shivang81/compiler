@@ -28,7 +28,6 @@ public class ParserTest {
 		String input = "  (3,5) ";
 		Scanner scanner = new Scanner(input);
 		scanner.scan();
-		System.out.println(scanner);
 		Parser parser = new Parser(scanner);
         parser.arg();
 	}
