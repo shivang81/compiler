@@ -235,6 +235,8 @@ public class Parser {
             } else {
                 throw new SyntaxException("illegal chainElem");
             }
+        } else {
+            throw new SyntaxException("illegal chainElem");
         }
 	}
 
