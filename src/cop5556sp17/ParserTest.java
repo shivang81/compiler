@@ -90,6 +90,34 @@ public class ParserTest {
     }
 
     @Test
+    public void testProgram6() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " $prog {} ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.parse();
+    }
+
+    @Test
+    public void testProgram7() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " _prog boolean $i , file $i2  { integer i while(i <= m + 9) { } } ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.parse();
+    }
+
+    @Test
+    public void testFactor1() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " true ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.factor();
+    }
+
+    @Test
+    public void testFactor2() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " \n(screenheight*screenwidth*123+screenheight/screenwidth-1234 != area  <= screenArea) ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.factor();
+    }
+
+    @Test
     public void testBlock1() throws IllegalCharException, IllegalNumberException, SyntaxException {
         String input = "{}";
         Parser parser = new Parser(new Scanner(input).scan());
@@ -229,6 +257,43 @@ public class ParserTest {
         String input = "( x \n,y)";
         Parser parser = new Parser(new Scanner(input).scan());
         parser.arg();
+    }
+
+
+    @Test
+    public void testWhile1() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " prog { while ( a < 111){ boolean x /* comment **\n** \n ccc */ sleep 5\n;}}";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.parse();
+    }
+
+    @Test
+    public void testIf1() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = " prog { if (i < 10) { boolean x sleep 5\n;}}";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.parse();
+    }
+
+    @Test
+    public void testDec1() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = "boolean x ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.dec();
+    }
+
+    @Test
+    public void testDec2() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = "boolean ";
+        Parser parser = new Parser(new Scanner(input).scan());
+        thrown.expect(SyntaxException.class);
+        parser.dec();
+    }
+
+    @Test
+    public void testDec3() throws IllegalCharException, IllegalNumberException, SyntaxException {
+        String input = "boolean a x";
+        Parser parser = new Parser(new Scanner(input).scan());
+        parser.dec();
     }
 
     @Test
