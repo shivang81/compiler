@@ -1,18 +1,15 @@
 package cop5556sp17;
 
-import cop5556sp17.AST.Expression;
+import cop5556sp17.AST.*;
 import cop5556sp17.Scanner.Kind;
 import static cop5556sp17.Scanner.Kind.*;
 import cop5556sp17.Scanner.Token;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-import cop5556sp17.AST.*;
-
-public class Parser {
+public class Parser{
 
     /**
      * Exception to be thrown if a syntax error is detected in the input.
@@ -41,12 +38,19 @@ public class Parser {
 
     Scanner scanner;
     Token t;
-    HashMap<String,HashSet<Kind>> firstSet = new HashMap<>();
+
+    HashSet<Kind> firstOfDec;
+    HashSet<Kind> firstOfStatement;
+    HashSet<Kind> firstOfParamDec;
+    HashSet<Kind> filterOps;
+    HashSet<Kind> frameOps;
+    HashSet<Kind> imageOps;
+    HashSet<Kind> firstOfChainElem;
 
     Parser(Scanner scanner) {
         this.scanner = scanner;
         t = scanner.nextToken();
-        initializeFirstSet();
+        this.initializeFirstSets();
     }
 
     /**
@@ -55,21 +59,19 @@ public class Parser {
      *
      * @throws SyntaxException
      */
-
-    ASTNode parse() throws SyntaxException {
+    Program parse() throws SyntaxException {
         Program p = program();
         matchEOF();
         return p;
     }
 
     Expression expression() throws SyntaxException {
-        //TODO
         Expression e0 = null;
         Expression e1 = null;
         Token firstToken = t;
-
         e0 = term();
-        while(firstSet.get("relOp").contains(t.kind)){
+        while (t.kind.equals(LT) || t.kind.equals(LE) || t.kind.equals(GT) || t.kind.equals(GE)
+                || t.kind.equals(EQUAL) || t.kind.equals(NOTEQUAL)) {
             Token op = t;
             consume();
             e1 = term();
@@ -79,28 +81,26 @@ public class Parser {
     }
 
     Expression term() throws SyntaxException {
-        //TODO
         Expression e0 = null;
         Expression e1 = null;
         Token firstToken = t;
         e0 = elem();
-        while(firstSet.get("weakOp").contains(t.kind)){
+        while (t.kind.equals(PLUS) || t.kind.equals(MINUS) || t.kind.equals(OR)) {
             Token op = t;
             consume();
             e1 = elem();
             e0 = new BinaryExpression(firstToken,e0,op,e1);
+
         }
         return e0;
     }
 
     Expression elem() throws SyntaxException {
-        //TODO
         Expression e0 = null;
         Expression e1 = null;
         Token firstToken = t;
         e0 = factor();
-
-        while (firstSet.get("strongOp").contains(t.kind)){
+        while (t.kind.equals(TIMES) || t.kind.equals(DIV) || t.kind.equals(AND) || t.kind.equals(MOD)) {
             Token op = t;
             consume();
             e1 = factor();
@@ -110,9 +110,8 @@ public class Parser {
     }
 
     Expression factor() throws SyntaxException {
-        Kind kind = t.kind;
         Expression e = null;
-
+        Kind kind = t.kind;
         switch (kind) {
             case IDENT: {
                 e = new IdentExpression(t);
@@ -144,36 +143,34 @@ public class Parser {
             break;
             default:
                 //you will want to provide a more useful error message
-                throw new SyntaxException("Illegal factor");
+                throw new SyntaxException("illegal factor");
         }
         return e;
     }
 
     Block block() throws SyntaxException {
-        //TODO
         Block b0 = null;
         ArrayList<Dec> decList = new ArrayList<>();
-        ArrayList<Statement> stmtList = new ArrayList<>();
+        ArrayList<Statement> statementList = new ArrayList<>();
         Token firstToken = t;
 
         match(LBRACE);
-        while(firstSet.get("dec").contains(t.kind) || firstSet.get("statement").contains(t.kind)) {
-            if (firstSet.get("dec").contains(t.kind)) {
+        while (firstOfDec.contains(t.kind) || firstOfStatement.contains(t.kind)) {
+            if(firstOfDec.contains(t.kind)) {
                 Dec d = dec();
                 decList.add(d);
-            } else if (firstSet.get("statement").contains(t.kind)) {
+            } else if(firstOfStatement.contains(t.kind)) {
                 Statement s = statement();
-                stmtList.add(s);
+                statementList.add(s);
+            } else {
+                throw new SyntaxException("illegal block");
             }
         }
         match(RBRACE);
-        b0 = new Block(firstToken,decList,stmtList);
-        return b0;
+        return new Block(firstToken,decList,statementList);
     }
 
     Program program() throws SyntaxException {
-        //TODO
-        Program p = null;
         ArrayList<ParamDec> paramList = new ArrayList<ParamDec>();
         Block b = null;
         Token firstToken = null;
@@ -182,108 +179,108 @@ public class Parser {
             firstToken = t;
 
         match(IDENT);
-        if(t.isKind(LBRACE)){
+        Kind kind = t.kind;
+        if(kind.equals(LBRACE)) {
             b = block();
-        }else if (firstSet.get("paramDec").contains(t.kind)){
+        } else if(firstOfParamDec.contains(kind)) {
             paramList.add(paramDec());
-            while (t.isKind(COMMA)){
+            while(t.kind.equals(COMMA)) {
                 consume();
                 paramList.add(paramDec());
             }
             b = block();
-        }else {
-            throw new SyntaxException("Illegal program");
+        } else {
+            throw new SyntaxException("illegal program");
         }
-        p = new Program(firstToken,paramList,b);
-        return p;
+        return new Program(firstToken,paramList,b);
     }
 
     ParamDec paramDec() throws SyntaxException {
-        //TODO
-        ParamDec paramDec = null;
         Token firstToken = null;
         Token ident = null;
 
-        if(firstSet.get("paramDec").contains(t.kind)){
+        if(firstOfParamDec.contains(t.kind)) {
             firstToken = t;
             consume();
             ident = t;
             match(IDENT);
-        }else {
-            throw new SyntaxException("Illegal paramDec");
+        } else {
+            throw new SyntaxException("illegal param_dec");
         }
-        paramDec = new ParamDec(firstToken,ident);
-        return paramDec;
+        return new ParamDec(firstToken,ident);
     }
 
     Dec dec() throws SyntaxException {
-        //TODO
         Token firstToken, ident;
 
-        if(firstSet.get("dec").contains(t.kind)){
+        if(firstOfDec.contains(t.kind)) {
             firstToken = t;
             consume();
             ident = t;
             match(IDENT);
-        }else {
-            throw new SyntaxException("Illegal dec");
+        } else {
+            throw new SyntaxException("illegal dec");
         }
         return new Dec(firstToken,ident);
     }
 
     Statement statement() throws SyntaxException {
-        //TODO
-        Statement statement = null;
+        Statement stmt = null;
         Token firstToken = null;
 
-        if(t.isKind(OP_SLEEP)){
-            firstToken = t;
-            consume();
-            Expression e = expression();
-            statement = new SleepStatement(firstToken,e);
-            match(SEMI);
-        }else if(t.isKind(KW_WHILE)){
-            statement = whileStatement();
-        }else if(t.isKind(KW_IF)){
-            statement = ifStatement();
-        }else if(t.isKind(IDENT)){
-            Token nextToken = scanner.peek();
-            if(nextToken.isKind(ASSIGN)){
-                statement = assign();
-            }else if(nextToken.isKind(ARROW) || nextToken.isKind(BARARROW)){
-                statement = chain();
-            }else {
-                throw new SyntaxException("Illegal statement at "+t.getLinePos());
+        if(firstOfStatement.contains(t.kind)) {
+            if(t.kind.equals(OP_SLEEP)) {
+                firstToken = t;
+                consume();
+                Expression e = expression();
+                stmt = new SleepStatement(firstToken,e);
+                match(SEMI);
+            } else if(t.kind.equals(KW_WHILE)) {
+                stmt = whileStatement();
+            } else if(t.kind.equals(KW_IF)) {
+                stmt = ifStatement();
+            } else if(t.kind.equals(IDENT)) {
+                firstToken = t;
+                IdentLValue identLValue = new IdentLValue(t);
+                if(scanner.peek().kind.equals(ASSIGN)) {
+                    consume();
+                    match(ASSIGN);
+                    Expression e = expression();
+                    match(SEMI);
+                    stmt = new AssignmentStatement(firstToken,identLValue,e);
+                } else if(scanner.peek().kind.equals(ARROW) || scanner.peek().kind.equals(BARARROW)) {
+                    stmt = chain();
+                    match(SEMI);
+                } else {
+                    throw new SyntaxException("illegal statement");
+                }
+
+            } else {
+                stmt = chain();
+                match(SEMI);
             }
-            match(SEMI);
-        }else if(firstSet.get("chainElem").contains(t.kind)){
-            statement = chain();
-            match(SEMI);
-        }else {
-            throw new SyntaxException("Illegal statement");
+        } else {
+            throw new SyntaxException("illegal statement");
         }
-        return statement;
+        return stmt;
     }
 
     Chain chain() throws SyntaxException {
-        //TODO
-        Chain c0;
-        ChainElem c1;
-        c0 = chainElem();
-        Token arrow = arrowOp();
-        c1 = chainElem();
-        c0 = new BinaryChain(c0.firstToken,c0,arrow,c1);
+        Chain chain0;
+        ChainElem chain1;
+        chain0 = chainElem();
+        Token op = arrowOp();
+        chain1 = chainElem();
+        chain0 = new BinaryChain(chain0.firstToken,chain0,op,chain1);
         while (t.isKind(ARROW) || t.isKind(BARARROW)){
-            arrow=arrowOp();
-//            consume();
-            c1 = chainElem();
-            c0 = new BinaryChain(c0.firstToken,c0,arrow,c1);
+            op = arrowOp();
+            chain1 = chainElem();
+            chain0 = new BinaryChain(chain0.firstToken,chain0,op,chain1);
         }
-        return c0;
+        return chain0;
     }
 
     ChainElem chainElem() throws SyntaxException {
-        //TODO
         ChainElem chainElem = null;
         Token firstToken = null;
 
@@ -291,17 +288,17 @@ public class Parser {
             firstToken = t;
             consume();
             chainElem = new IdentChain(firstToken);
-        }else if(firstSet.get("filterOp").contains(t.kind)){
+        }else if(filterOps.contains(t.kind)){
             firstToken = t;
             consume();
             Tuple tuple = arg();
             chainElem = new FilterOpChain(firstToken,tuple);
-        }else if(firstSet.get("frameOp").contains(t.kind)){
+        }else if(frameOps.contains(t.kind)){
             firstToken = t;
             consume();
             Tuple tuple = arg();
             chainElem = new FrameOpChain(firstToken,tuple);
-        }else if(firstSet.get("imageOp").contains(t.kind)){
+        }else if(imageOps.contains(t.kind)){
             firstToken = t;
             consume();
             Tuple tuple = arg();
@@ -312,57 +309,9 @@ public class Parser {
         return chainElem;
     }
 
-    Tuple arg() throws SyntaxException {
-        //TODO
-        List<Expression> exprList = new ArrayList<>();
-        Token firstToken = null;
-
-        if(t.isKind(LPAREN)){
-            firstToken = t;
-            consume();
-            exprList.add(expression());
-            while (t.isKind(COMMA)){
-                consume();
-                exprList.add(expression());
-            }
-            match(RPAREN);
-            return new Tuple(firstToken,exprList);
-        }else {
-            return new Tuple(t,exprList);
-        }
-    }
-
-    WhileStatement whileStatement() throws SyntaxException{
-        Token firstToken = t;
-        match(KW_WHILE);
-        match(LPAREN);
-        Expression e = expression();
-        match(RPAREN);
-        Block b = block();
-        return new WhileStatement(firstToken,e,b);
-    }
-
-    IfStatement ifStatement() throws SyntaxException{
-        Token firstToken = t;
-        match(KW_IF);
-        match(LPAREN);
-        Expression e = expression();
-        match(RPAREN);
-        Block b = block();
-        return new IfStatement(firstToken,e,b);
-    }
-
-    AssignmentStatement assign() throws SyntaxException{
-        Token firstToken = t;
-        match(IDENT);
-        IdentLValue identLValue = new IdentLValue(firstToken);
-        match(ASSIGN);
-        Expression e = expression();
-        return new AssignmentStatement(firstToken,identLValue,e);
-    }
-
     Token arrowOp() throws SyntaxException{
-        Token token = null;
+        Token token;
+
         if(t.isKind(ARROW) || t.isKind(BARARROW)){
             token = t;
             consume();
@@ -370,6 +319,61 @@ public class Parser {
             throw new SyntaxException("Illegal arrowOp");
         }
         return token;
+    }
+
+    Tuple arg() throws SyntaxException {
+        Tuple tuple = null;
+        List<Expression> expressionList  = new ArrayList<>();
+        Token firstToken = null;
+
+        if(t.kind.equals(LPAREN)) {
+            firstToken = t;
+            consume();
+            expressionList.add(expression());
+            while(t.kind.equals(COMMA)) {
+                consume();
+                expressionList.add(expression());
+            }
+            match(RPAREN);
+            tuple = new Tuple(firstToken,expressionList);
+            return tuple;
+        }else {
+            return new Tuple(t,expressionList);
+        }
+    }
+
+    IfStatement ifStatement() throws SyntaxException {
+        if(t.kind.equals(KW_IF)) {
+            Token firstToken = t;
+            consume();
+            match(LPAREN);
+            Expression expr = expression();
+            match(RPAREN);
+            Block b = block();
+            return new IfStatement(firstToken,expr,b);
+        } else {
+            throw new SyntaxException("illegal ifStatement");
+        }
+    }
+
+    WhileStatement whileStatement() throws SyntaxException {
+        if(t.kind.equals(KW_WHILE)) {
+            Token firstToken = t;
+            consume();
+            match(LPAREN);
+            Expression expr = expression();
+            match(RPAREN);
+            Block b = block();
+            return new WhileStatement(firstToken,expr,b);
+        } else {
+            throw new SyntaxException("illegal ifStatement");
+        }
+    }
+
+    void assign() throws SyntaxException {
+        match(IDENT);
+        match(ASSIGN);
+        expression();
     }
 
     /**
@@ -380,7 +384,7 @@ public class Parser {
      * @throws SyntaxException
      */
     private Token matchEOF() throws SyntaxException {
-        if (t.isKind(EOF)) {
+        if (t.kind.equals(EOF)) {
             return t;
         }
         throw new SyntaxException("expected EOF");
@@ -397,8 +401,7 @@ public class Parser {
      * @throws SyntaxException
      */
     private Token match(Kind kind) throws SyntaxException {
-        if (t.isKind(kind)) {
-
+        if (t.kind.equals(kind)) {
             return consume();
         }
         throw new SyntaxException("saw " + t.kind + " expected " + kind);
@@ -417,8 +420,12 @@ public class Parser {
      * @throws SyntaxException
      */
     private Token match(Kind... kinds) throws SyntaxException {
-        // TODO. Optional but handy
-        return null; //replace this statement
+        for(Kind kind : kinds) {
+            if (t.kind.equals(kind)) {
+                return consume();
+            }
+        }
+        throw new SyntaxException("kinds did not match");
     }
 
     /**
@@ -435,95 +442,81 @@ public class Parser {
         return tmp;
     }
 
-    void initializeFirstSet(){
-        // block
-        HashSet<Kind> block = new HashSet<>();
-        block.add(Kind.LBRACE);
-        firstSet.put("block",block);
+    private void initializeFirstSets() {
+        initializeFirstOfDec();
+        initializeFirstOfStatement();
+        initializeFirstOfParamDec();
+        initializeFilterOps();
+        initializeFrameOps();
+        initializeImageOps();
+        initializeFirstOfChainElem();
 
-        // paramdec
-        HashSet<Kind> paramdec = new HashSet<>();
-        paramdec.add(Kind.KW_URL);
-        paramdec.add(Kind.KW_FILE);
-        paramdec.add(Kind.KW_INTEGER);
-        paramdec.add(Kind.KW_BOOLEAN);
-        firstSet.put("paramDec",paramdec);
+    }
 
-        // dec
-        HashSet<Kind> dec = new HashSet<>();
-        dec.add(Kind.KW_INTEGER);
-        dec.add(Kind.KW_BOOLEAN);
-        dec.add(Kind.KW_IMAGE);
-        dec.add(Kind.KW_FRAME);
-        firstSet.put("dec",dec);
+    private void initializeFirstOfDec() {
+        firstOfDec = new HashSet<>();
+        firstOfDec.add(KW_INTEGER);
+        firstOfDec.add(KW_BOOLEAN);
+        firstOfDec.add(KW_IMAGE);
+        firstOfDec.add(KW_FRAME);
+    }
 
+    private void initializeFirstOfStatement() {
+        firstOfStatement = new HashSet<>();
+        firstOfStatement.add(OP_SLEEP);
+        firstOfStatement.add(KW_WHILE);
+        firstOfStatement.add(KW_IF);
+        firstOfStatement.add(IDENT);
+        firstOfStatement.add(OP_BLUR);
+        firstOfStatement.add(OP_GRAY);
+        firstOfStatement.add(OP_CONVOLVE);
+        firstOfStatement.add(KW_SHOW);
+        firstOfStatement.add(KW_HIDE);
+        firstOfStatement.add(KW_MOVE);
+        firstOfStatement.add(KW_XLOC);
+        firstOfStatement.add(KW_YLOC);
+        firstOfStatement.add(OP_WIDTH);
+        firstOfStatement.add(OP_HEIGHT);
+        firstOfStatement.add(KW_SCALE);
+    }
 
-        //filterOp
-        HashSet<Kind> filterOp = new HashSet<>();
-        filterOp.add(Kind.OP_BLUR);
-        filterOp.add(Kind.OP_GRAY);
-        filterOp.add(Kind.OP_CONVOLVE);
-        firstSet.put("filterOp",filterOp);
+    private void initializeFirstOfParamDec() {
+        firstOfParamDec = new HashSet<>();
+        firstOfParamDec.add(KW_URL);
+        firstOfParamDec.add(KW_FILE);
+        firstOfParamDec.add(KW_INTEGER);
+        firstOfParamDec.add(KW_BOOLEAN);
+    }
 
-        //frameOp
-        HashSet<Kind> frameOp = new HashSet<>();
-        frameOp.add(Kind.KW_SHOW);
-        frameOp.add(Kind.KW_HIDE);
-        frameOp.add(Kind.KW_MOVE);
-        frameOp.add(Kind.KW_XLOC);
-        frameOp.add(Kind.KW_YLOC);
-        firstSet.put("frameOp",frameOp);
+    private void initializeFilterOps() {
+        filterOps = new HashSet<>();
+        filterOps.add(OP_BLUR);
+        filterOps.add(OP_GRAY);
+        filterOps.add(OP_CONVOLVE);
+    }
 
-        //imageOp
-        HashSet<Kind> imageOp = new HashSet<>();
-        imageOp.add(Kind.OP_WIDTH);
-        imageOp.add(Kind.OP_HEIGHT);
-        imageOp.add(Kind.KW_SCALE);
-        firstSet.put("imageOp",imageOp);
+    private void initializeFrameOps() {
+        frameOps = new HashSet<>();
+        frameOps.add(KW_SHOW);
+        frameOps.add(KW_HIDE);
+        frameOps.add(KW_MOVE);
+        frameOps.add(KW_XLOC);
+        frameOps.add(KW_YLOC);
+    }
 
+    private void initializeImageOps() {
+        imageOps = new HashSet<>();
+        imageOps.add(OP_WIDTH);
+        imageOps.add(OP_HEIGHT);
+        imageOps.add(KW_SCALE);
+    }
 
-        //relOp
-        HashSet<Kind> relOp = new HashSet<>();
-        relOp.add(Kind.LT);
-        relOp.add(Kind.LE);
-        relOp.add(Kind.GT);
-        relOp.add(Kind.GE);
-        relOp.add(Kind.EQUAL);
-        relOp.add(Kind.NOTEQUAL);
-        firstSet.put("relOp",relOp);
-
-        //strongOp
-        HashSet<Kind> strongOp = new HashSet<>();
-        strongOp.add(Kind.TIMES);
-        strongOp.add(Kind.DIV);
-        strongOp.add(Kind.AND);
-        strongOp.add(Kind.MOD);
-        firstSet.put("strongOp",strongOp);
-
-        // weakOp
-        HashSet<Kind> weakOp = new HashSet<>();
-        weakOp.add(Kind.PLUS);
-        weakOp.add(Kind.MINUS);
-        weakOp.add(Kind.OR);
-        firstSet.put("weakOp",weakOp);
-
-        // chainElem
-        HashSet<Kind> chainElem = new HashSet<>();
-        chainElem.add(Kind.IDENT);
-        chainElem.addAll(filterOp);
-        chainElem.addAll(frameOp);
-        chainElem.addAll(imageOp);
-        firstSet.put("chainElem",chainElem);
-
-        // statement
-        HashSet<Kind> statement = new HashSet<>();
-        statement.add(Kind.KW_WHILE);
-        statement.add(Kind.OP_SLEEP);
-        statement.add(Kind.KW_IF);
-        // TODO add chain and assign, first of assign is IDENT which is included in chainElem
-        statement.addAll(chainElem);
-        firstSet.put("statement",statement);
-
+    private void initializeFirstOfChainElem() {
+        firstOfChainElem = new HashSet<>();
+        firstOfChainElem.add(IDENT);
+        firstOfChainElem.addAll(filterOps);
+        firstOfChainElem.addAll(frameOps);
+        firstOfChainElem.addAll(imageOps);
     }
 
 }

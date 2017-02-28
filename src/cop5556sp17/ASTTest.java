@@ -39,7 +39,7 @@ public class ASTTest {
 	static void show(Object s){
 		if(doPrint){System.out.println(s);}
 	}
-	
+
 
 	@Rule
 	public ExpectedException thrown = ExpectedException.none();
@@ -227,7 +227,4 @@ public class ASTTest {
 		assertEquals(Program.class, ast.getClass());
 		assertEquals(IDENT, programParser.getFirstToken().kind);
 	}
-
-
-
 }
