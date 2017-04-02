@@ -6,6 +6,8 @@ public class Dec extends ASTNode {
 	
 	final Token ident;
 
+	private Type.TypeName typeName;
+
 	public Dec(Token firstToken, Token ident) {
 		super(firstToken);
 
@@ -18,6 +20,14 @@ public class Dec extends ASTNode {
 
 	public Token getIdent() {
 		return ident;
+	}
+
+	public Type.TypeName getTypeName() {
+		return typeName;
+	}
+
+	public void setTypeName(Type.TypeName typeName) {
+		this.typeName = typeName;
 	}
 
 	@Override
