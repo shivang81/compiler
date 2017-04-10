@@ -8,6 +8,8 @@ public class Dec extends ASTNode {
 
 	private Type.TypeName typeName;
 
+	int slot;
+
 	public Dec(Token firstToken, Token ident) {
 		super(firstToken);
 
@@ -28,6 +30,14 @@ public class Dec extends ASTNode {
 
 	public void setTypeName(Type.TypeName typeName) {
 		this.typeName = typeName;
+	}
+
+	public int getSlot() {
+		return slot;
+	}
+
+	public void setSlot(int slot) {
+		this.slot = slot;
 	}
 
 	@Override

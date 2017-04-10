@@ -131,7 +131,6 @@ public class TypeCheckVisitor implements ASTVisitor {
 					throw new TypeCheckException("Illegal operation for PLUS / MINUS");
 				}
 				break;
-
 			case ">":
 			case "<":
 			case ">=":
@@ -168,7 +167,12 @@ public class TypeCheckVisitor implements ASTVisitor {
 				else
 					throw new TypeCheckException("Illegal operation for DIV.");
 				break;
-
+			case "&":
+			case "|":
+				if (E0Type == TypeName.BOOLEAN && E1Type == TypeName.BOOLEAN) {
+					binaryExpression.setTypeName(BOOLEAN);
+				}
+				break;
 			default:
 				throw new TypeCheckException("Invalid op found in binary expression.");
 		}
@@ -240,6 +244,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		if(dec == null)
 			throw new TypeCheckException("Identifier not declared.");
 		identExpression.setTypeName(dec.getTypeName());
+		identExpression.setDec(dec);
 		return arg;
 	}
 
