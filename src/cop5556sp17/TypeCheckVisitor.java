@@ -102,10 +102,17 @@ public class TypeCheckVisitor implements ASTVisitor {
 				} else if(arrow.equals(ARROW.getText()) &&
 						t1.kind == KW_SCALE) {
 					binaryChain.setTypeName(IMAGE);
-				} else if(arrow.equals(ARROW.getText())) {
+				} else if(arrow.equals(ARROW.getText()) && binaryChain.getE0() instanceof IdentChain && type == IMAGE) {
 					binaryChain.setTypeName(IMAGE);
 				} else {
 					throw new TypeCheckException("Invalid op / chainelem for FRAME in binary chain.");
+				}
+				break;
+			case INTEGER:
+				if(arrow.equals(ARROW.getText()) && binaryChain.getE0() instanceof IdentChain && type == INTEGER) {
+					binaryChain.setTypeName(INTEGER);
+				} else {
+					throw new TypeCheckException("Invalid op / chainelem for INTEGER in binary chain.");
 				}
 				break;
 			default:
@@ -152,6 +159,8 @@ public class TypeCheckVisitor implements ASTVisitor {
 				}
 				break;
 			case "*":
+			case "/":
+			case "%":
 				if (E0Type == TypeName.INTEGER && E1Type == TypeName.INTEGER)
 					binaryExpression.setTypeName(INTEGER);
 				else if (E0Type == TypeName.INTEGER && E1Type == TypeName.IMAGE)
@@ -159,13 +168,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 				else if (E0Type == TypeName.IMAGE && E1Type == TypeName.INTEGER)
 					binaryExpression.setTypeName(IMAGE);
 				else
-					throw new TypeCheckException("Illegal operation for TIMES.");
-				break;
-			case "/":
-				if (E0Type == TypeName.INTEGER && E1Type == TypeName.INTEGER)
-					binaryExpression.setTypeName(INTEGER);
-				else
-					throw new TypeCheckException("Illegal operation for DIV.");
+					throw new TypeCheckException("Illegal operation for TIMES/DIV.");
 				break;
 			case "&":
 			case "|":
@@ -234,6 +237,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 		Dec dec = symtab.lookup(identChain.getFirstToken().getText());
 		if(dec == null)
 			throw new TypeCheckException("Identifier not declared.");
+		identChain.setDec(dec);
 		identChain.setTypeName(dec.getTypeName());
 		return arg;
 	}
