@@ -95,21 +95,21 @@ public class TypeCheckVisitor implements ASTVisitor {
 					binaryChain.setTypeName(FRAME);
 				} else if(arrow.equals(ARROW.getText()) && type == FILE) {
 					binaryChain.setTypeName(NONE);
-				} else if(arrow.equals(ARROW.getText()) || arrow.equals(BARARROW.getText()) && binaryChain.getE0()
+				} else if(arrow.equals(ARROW.getText()) || arrow.equals(BARARROW.getText()) && binaryChain.getE1()
 						instanceof FilterOpChain && t1.kind == OP_WIDTH || t1.kind == OP_GRAY ||
 						t1.kind == OP_BLUR || t1.kind == OP_CONVOLVE) {
 					binaryChain.setTypeName(IMAGE);
 				} else if(arrow.equals(ARROW.getText()) &&
 						t1.kind == KW_SCALE) {
 					binaryChain.setTypeName(IMAGE);
-				} else if(arrow.equals(ARROW.getText()) && binaryChain.getE0() instanceof IdentChain && type == IMAGE) {
+				} else if(arrow.equals(ARROW.getText()) && binaryChain.getE1() instanceof IdentChain && type == IMAGE) {
 					binaryChain.setTypeName(IMAGE);
 				} else {
 					throw new TypeCheckException("Invalid op / chainelem for FRAME in binary chain.");
 				}
 				break;
 			case INTEGER:
-				if(arrow.equals(ARROW.getText()) && binaryChain.getE0() instanceof IdentChain && type == INTEGER) {
+				if(arrow.equals(ARROW.getText()) && binaryChain.getE1() instanceof IdentChain && type == INTEGER) {
 					binaryChain.setTypeName(INTEGER);
 				} else {
 					throw new TypeCheckException("Invalid op / chainelem for INTEGER in binary chain.");
