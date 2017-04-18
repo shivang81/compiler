@@ -34,6 +34,7 @@ import cop5556sp17.AST.Tuple;
 import cop5556sp17.AST.Type.TypeName;
 import cop5556sp17.AST.WhileStatement;
 
+import static cop5556sp17.AST.Type.TypeName.BOOLEAN;
 import static cop5556sp17.AST.Type.TypeName.FILE;
 import static cop5556sp17.AST.Type.TypeName.IMAGE;
 import static cop5556sp17.Scanner.Kind.*;
@@ -194,7 +195,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			default:
 		}
 		mv.visitInsn(DUP);
-		binaryChain.getE1().visit(this, "right");
+		if(binaryChain.getE1() instanceof FilterOpChain) {
+			binaryChain.getE1().visit(this, binaryChain.getArrow());
+		} else {
+			binaryChain.getE1().visit(this, "right");
+		}
 		return null;
 	}
 
@@ -252,43 +257,68 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			case AND:
 				mv.visitInsn(IAND);
 				break;
-			case LT: {
+			case LT:
 				mv.visitJumpInsn(IF_ICMPLT, set);
 				mv.visitLdcInsn(false);
-			}
-			break;
-			case LE: {
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
+			case LE:
 				mv.visitJumpInsn(IF_ICMPLE, set);
 				mv.visitLdcInsn(false);
-			}
-			break;
-			case GT: {
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
+			case GT:
 				mv.visitJumpInsn(IF_ICMPGT, set);
 				mv.visitLdcInsn(false);
-			}
-			break;
-			case GE: {
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
+			case GE:
 				mv.visitJumpInsn(IF_ICMPGE, set);
 				mv.visitLdcInsn(false);
-			}
-			break;
-			case EQUAL: {
-				mv.visitJumpInsn(IF_ICMPEQ, set);
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
+			case EQUAL:
+				if (binaryExpression.getE0().getTypeName().isType(TypeName.INTEGER, BOOLEAN)) {
+					mv.visitJumpInsn(IF_ICMPEQ, set);
+				}
+				else {
+					mv.visitJumpInsn(IF_ACMPEQ, set);
+				}
 				mv.visitLdcInsn(false);
-			}
-			break;
-			case NOTEQUAL: {
-				mv.visitJumpInsn(IF_ICMPNE, set);
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
+			case NOTEQUAL:
+				if (binaryExpression.getE0().getTypeName().isType(TypeName.INTEGER, BOOLEAN)) {
+					mv.visitJumpInsn(IF_ICMPNE, set);
+				}
+				else {
+					mv.visitJumpInsn(IF_ACMPNE, set);
+				}
 				mv.visitLdcInsn(false);
-			}
-			break;
+				mv.visitJumpInsn(GOTO, end);
+				mv.visitLabel(set);
+				mv.visitLdcInsn(true);
+				mv.visitLabel(end);
+				break;
 			default:
 				break;
 		}
-		mv.visitJumpInsn(GOTO, end);
-		mv.visitLabel(set);
-		mv.visitLdcInsn(true);
-		mv.visitLabel(end);
+
 		return null;
 	}
 
@@ -342,11 +372,17 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 
 	@Override
 	public Object visitFilterOpChain(FilterOpChain filterOpChain, Object arg) throws Exception {
-		if(filterOpChain.firstToken.kind == OP_BLUR) {
+		Scanner.Token op = (Scanner.Token)arg;
+		if(op.kind.equals(BARARROW)) {
+			mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeImageOps.JVMName,"copyImage", PLPRuntimeImageOps.copyImageSig, false);
+		} else {
+			mv.visitInsn(ACONST_NULL);
+		}
+		if (filterOpChain.firstToken.kind == OP_BLUR) {
 			mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeFilterOps.JVMName, "blurOp", PLPRuntimeFilterOps.opSig, false);
-		} else if(filterOpChain.firstToken.kind == OP_CONVOLVE) {
+		} else if (filterOpChain.firstToken.kind == OP_CONVOLVE) {
 			mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeFilterOps.JVMName, "convolveOp", PLPRuntimeFilterOps.opSig, false);
-		} else if(filterOpChain.firstToken.kind == OP_GRAY) {
+		} else if (filterOpChain.firstToken.kind == OP_GRAY) {
 			mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeFilterOps.JVMName, "grayOp", PLPRuntimeFilterOps.opSig, false);
 		}
 		return null;
@@ -402,13 +438,17 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 				if(identChain.getDec().getTypeName() == TypeName.INTEGER)
 					mv.visitVarInsn(ISTORE, slot);
 				else if(identChain.getDec().getTypeName() == TypeName.IMAGE) {
+					mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeImageOps.JVMName,"copyImage", PLPRuntimeImageOps.copyImageSig, false);
 					mv.visitVarInsn(ASTORE, slot);
 				} else if(identChain.getDec().getTypeName() == TypeName.FILE)  {
 					mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeImageIO.className,"write", PLPRuntimeImageIO.writeImageDesc, false);
 					mv.visitVarInsn(ASTORE, slot);
 				} else if(identChain.getDec().getTypeName() == TypeName.FRAME) {
+					mv.visitInsn(POP);
 					mv.visitVarInsn(ALOAD, slot);
 					mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeFrame.JVMClassName,"createOrSetFrame", PLPRuntimeFrame.createOrSetFrameSig, false);
+					mv.visitInsn(DUP);
+					mv.visitVarInsn(ASTORE, slot);
 				}
 			}
 		}
@@ -423,11 +463,11 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitVarInsn(ALOAD, 0);
 			if(dec.getTypeName() == TypeName.INTEGER)
 				mv.visitFieldInsn(GETFIELD, className, identExpression.getFirstToken().getText(), "I");
-			else if(dec.getTypeName() == TypeName.BOOLEAN)
+			else if(dec.getTypeName() == BOOLEAN)
 				mv.visitFieldInsn(GETFIELD, className, identExpression.getFirstToken().getText(), "Z");
 		}
 		else {
-			if(identExpression.getTypeName() == TypeName.INTEGER || identExpression.getTypeName() == TypeName.BOOLEAN)
+			if(identExpression.getTypeName() == TypeName.INTEGER || identExpression.getTypeName() == BOOLEAN)
 				mv.visitVarInsn(ILOAD, slot);
 			else
 				mv.visitVarInsn(ALOAD, slot);
@@ -445,7 +485,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			mv.visitFieldInsn(PUTFIELD, className, identX.getFirstToken().getText(), fieldType);
 		}
 		else {
-			if(identX.getDec().getTypeName() == TypeName.INTEGER || identX.getDec().getTypeName() == TypeName.BOOLEAN)
+			if(identX.getDec().getTypeName() == TypeName.INTEGER || identX.getDec().getTypeName() == BOOLEAN)
 				mv.visitVarInsn(ISTORE, slot);
 			else if(identX.getDec().getTypeName() == TypeName.IMAGE) {
 				mv.visitMethodInsn(INVOKESTATIC, PLPRuntimeImageOps.JVMName,"copyImage", PLPRuntimeImageOps.copyImageSig, false);
@@ -503,7 +543,7 @@ public class CodeGenVisitor implements ASTVisitor, Opcodes {
 			loadStack();
 			mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I", false);
 			mv.visitFieldInsn(PUTFIELD, className, paramDec.getIdent().getText(), "I");
-		} else if(paramDec.getTypeName() == TypeName.BOOLEAN) {
+		} else if(paramDec.getTypeName() == BOOLEAN) {
 			loadStack();
 			mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "parseBoolean", "(Ljava/lang/String;)Z", false);
 			mv.visitFieldInsn(PUTFIELD, className, paramDec.getIdent().getText(), "Z");

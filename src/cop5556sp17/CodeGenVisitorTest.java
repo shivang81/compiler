@@ -1,14 +1,13 @@
 
 package cop5556sp17;
 
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import cop5556sp17.AST.ASTNode;
 import cop5556sp17.AST.Program;
+import org.junit.Test;
+
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
 
 public class CodeGenVisitorTest {
 
@@ -259,5 +258,550 @@ public class CodeGenVisitorTest {
 		Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
 		instance.run();
 	}
+
+	@Test
+	public void testLoadImageFromFile() throws Exception {
+		String progname = "testLoadImageFromFile";
+        String input = progname + " file f{image img \n f -> img;} ";
+        Scanner scanner = new Scanner(input);
+		scanner.scan();
+		Parser parser = new Parser(scanner);
+		ASTNode program = parser.parse();
+		TypeCheckVisitor v = new TypeCheckVisitor();
+		program.visit(v, null);
+        show(program);
+
+		// generate code
+		CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+		byte[] bytecode = (byte[]) program.visit(cv, null);
+
+		CodeGenUtils.dumpBytecode(bytecode);
+
+		// write byte code to file
+		String name = ((Program) program).getName();
+		String classFileName = "bin/" + name + ".class";
+		OutputStream output = new FileOutputStream(classFileName);
+		output.write(bytecode);
+		output.close();
+		System.out.println("wrote classfile to " + classFileName);
+
+		// directly execute bytecode
+		String[] args = {"bin/Oregon1.JPG"}; //
+		try {
+			Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+			instance.run();
+		} catch (InvocationTargetException e) {
+			e.printStackTrace();
+			throw e;
+		}
+	}
+
+    @Test
+    public void testBinaryAddImage() throws Exception {
+        String progname = "testBinaryAddImage";
+        String input = progname + " file f1, file f2, file f3{" +
+                "image img1 \n f1 -> img1; \n image img2 \n" +
+                "f2 -> img2; image img3 img3 <- img1 + img2;\n" +
+                "img3 -> f3;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/image1.jpg", "bin/imgAdd.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testBinarySubImage() throws Exception {
+        String progname = "testBinarySubImage";
+        String input = progname + " file f1, file f2, file f3{" +
+                "image img1 \n f1 -> img1; \n image img2 \n" +
+                "f2 -> img2; image img3 img3 <- img1 - img2;\n" +
+                "img3 -> f3;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/image1.jpg", "bin/imgSub.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testBinaryMulImage() throws Exception {
+        String progname = "testBinaryMulImage";
+        String input = progname + " file f1, file f2, file f3{" +
+                "image img1 \n f1 -> img1; \n image img2 \n" +
+                "f2 -> img2; image img3 img3 <- img1 * 2;\n" +
+                "img3 -> f3;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/image1.jpg", "bin/imgMul.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testBinaryDivImage() throws Exception {
+        String progname = "testBinaryDivImage";
+        String input = progname + " file f1, file f2, file f3{" +
+                "image img1 \n f1 -> img1; \n image img2 \n" +
+                "f2 -> img2; image img3 img3 <- img1 / 5;\n" +
+                "img3 -> f3;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/image1.jpg", "bin/imgDiv.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testBinaryModImage() throws Exception {
+        String progname = "testBinaryModImage";
+        String input = progname + " file f1, file f2, file f3{" +
+                "image img1 \n f1 -> img1; \n image img2 \n" +
+                "f2 -> img2; image img3 img3 <- img1 % 3;\n" +
+                "img3 -> f3;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/image1.jpg", "bin/imgMod.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testChain() throws Exception {
+        String progname = "testChain";
+        String input = progname + " file f1, file f2 {image i \n f1 -> i; \n i -> blur -> f2;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/imgOut.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testExtendedChain() throws Exception {
+        String progname = "testExtendedChain";
+        String input = progname + " file f1, file f2 {image i \n f1 -> i; \n " +
+                "i -> blur -> convolve -> gray -> f2;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image.jpg", "bin/imgOut1.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testFrames() throws Exception {
+        String progname = "testFrames";
+        String input = progname + " file f1{" +
+                " image i frame fr f1 -> i;" +
+                " i -> fr; \n" +
+                " fr -> show; \n" +
+                " sleep(1000);}";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image1.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testLoadImageFromUrl() throws Exception {
+        String progname = "testLoadImageFromUrl";
+        String input = progname + " url u {" +
+                "image img \n " +
+                "u -> img;\n" +
+                "frame fr img -> fr -> show;\n" +
+                "sleep(1000);\n " +
+                "fr -> hide;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"http://www.gettyimages.com/gi-resources/images/Embed/new/embed2.jpg"}; //
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testFramesExtended() throws Exception {
+        String progname = "testFramesExtended";
+        String input = progname + " file f1, file f2 {" +
+                " image i frame fr f1 -> i;" +
+                " i -> scale(3) -> i; \n" +
+                " i -> fr; \n" +
+                " fr -> show; \n" +
+                " sleep(1000); \n" +
+                " fr -> hide;\n" +
+                " i -> f2;} ";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image1.jpg", "bin/imgOut1.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testFramesExtended2() throws Exception {
+        String progname = "testFramesExtended2";
+        String input = progname + " file f1{" +
+                " image i frame fr f1 -> i;" +
+                " i -> fr; \n" +
+                " fr -> show; \n" +
+                "sleep(1000); \n" +
+                " fr -> hide; \n" +
+                " i -> gray -> fr; \n" +
+                " fr -> show; \n" +
+                " sleep(1000);}";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image1.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testFrameOperations() throws Exception {
+        String progname = "testFrameOperations";
+        String input = progname + " file f, url u { \n"
+                + "integer i1 integer i2 image img1 image img2 frame fr\n"
+                + "f -> img1;\n"
+                + "u -> img1;\n"
+                + "img1->img2;\n"
+                + "img1-> fr-> show -> move(screenwidth, screenheight); \n"
+                + "sleep(1000); fr -> hide;\n"
+                + "fr -> xloc -> i1;\n"
+                + "fr -> yloc -> i2;\n"
+                + "img1 -> fr -> show -> move(i1 - 1000, i2 - 1200); \n"
+                + "sleep(1000);}";
+        Scanner scanner = new Scanner(input);
+        scanner.scan();
+        Parser parser = new Parser(scanner);
+        ASTNode program = parser.parse();
+        TypeCheckVisitor v = new TypeCheckVisitor();
+        program.visit(v, null);
+        show(program);
+
+        // generate code
+        CodeGenVisitor cv = new CodeGenVisitor(devel, grade, null);
+
+        byte[] bytecode = (byte[]) program.visit(cv, null);
+
+        CodeGenUtils.dumpBytecode(bytecode);
+
+        // write byte code to file
+        String name = ((Program) program).getName();
+        String classFileName = "bin/" + name + ".class";
+        OutputStream output = new FileOutputStream(classFileName);
+        output.write(bytecode);
+        output.close();
+        System.out.println("wrote classfile to " + classFileName);
+
+        // directly execute bytecode
+        String[] args = {"bin/image1.jpg",
+                "http://www.gettyimages.com/gi-resources/images/Embed/new/embed2.jpg"};
+        try {
+            Runnable instance = CodeGenUtils.getInstance(name, bytecode, args);
+            instance.run();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
 }
 

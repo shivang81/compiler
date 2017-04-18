@@ -96,11 +96,9 @@ public class TypeCheckVisitor implements ASTVisitor {
 				} else if(arrow.equals(ARROW.getText()) && type == FILE) {
 					binaryChain.setTypeName(NONE);
 				} else if(arrow.equals(ARROW.getText()) || arrow.equals(BARARROW.getText()) && binaryChain.getE1()
-						instanceof FilterOpChain && t1.kind == OP_WIDTH || t1.kind == OP_GRAY ||
-						t1.kind == OP_BLUR || t1.kind == OP_CONVOLVE) {
+						instanceof FilterOpChain && (t1.kind == OP_GRAY || t1.kind == OP_BLUR || t1.kind == OP_CONVOLVE)) {
 					binaryChain.setTypeName(IMAGE);
-				} else if(arrow.equals(ARROW.getText()) &&
-						t1.kind == KW_SCALE) {
+				} else if(arrow.equals(ARROW.getText()) && binaryChain.getE1() instanceof ImageOpChain && t1.kind == KW_SCALE) {
 					binaryChain.setTypeName(IMAGE);
 				} else if(arrow.equals(ARROW.getText()) && binaryChain.getE1() instanceof IdentChain && type == IMAGE) {
 					binaryChain.setTypeName(IMAGE);
@@ -168,7 +166,7 @@ public class TypeCheckVisitor implements ASTVisitor {
 				else if (E0Type == TypeName.IMAGE && E1Type == TypeName.INTEGER)
 					binaryExpression.setTypeName(IMAGE);
 				else
-					throw new TypeCheckException("Illegal operation for TIMES/DIV.");
+					throw new TypeCheckException("Illegal operation for TIMES/DIV/MOD.");
 				break;
 			case "&":
 			case "|":
